@@ -15,10 +15,13 @@ angularMeteorCollections.factory('AngularMeteorCollection', ['$q', '$meteorSubsc
       return this;
     };
 
-    AngularMeteorCollection.save = function save(docs, useUnsetModifier) {
+    AngularMeteorCollection.save = function save(docs, useUnsetModifier, hashKeysMightExist) {
       var self = this,
         collection = self.$$collection,
         promises = []; // To store all promises.
+
+      // Default is true
+      hashKeysMightExist = hashKeysMightExist !== false;
 
       /*
        * The upsertObject function will either update an object if the _id exists
@@ -27,6 +30,9 @@ angularMeteorCollections.factory('AngularMeteorCollection', ['$q', '$meteorSubsc
        */
       function upsertObject(item, $q) {
         var deferred = $q.defer();
+
+        if (hashKeysMightExist)
+          item = angular.copy(item);
 
         if (item._id) { // Performs an update if the _id property is set.
           var item_id = item._id; // Store the _id in temporary variable
@@ -255,7 +261,7 @@ angularMeteorCollections.factory('$meteorCollection', ['AngularMeteorCollection'
                   ngCollection.unregisterAutoBind();
                   var newValue = ngCollection.splice( index, 1 )[0];
                   setAutoBind();
-                  ngCollection.save(newValue);
+                  ngCollection.save(newValue, false, false);
                 },
                 removedAt: function (id, item, index) {
                   ngCollection.remove(id);
@@ -263,10 +269,10 @@ angularMeteorCollections.factory('$meteorCollection', ['AngularMeteorCollection'
                 changedAt: function (id, setDiff, unsetDiff, index, oldItem) {
 
                   if (setDiff)
-                    ngCollection.save(setDiff);
+                    ngCollection.save(setDiff, false, false);
 
                   if (unsetDiff)
-                    ngCollection.save(unsetDiff, true);
+                    ngCollection.save(unsetDiff, true, false);
                 },
                 movedTo: function (id, item, fromIndex, toIndex) {
                   // XXX do we need this?
